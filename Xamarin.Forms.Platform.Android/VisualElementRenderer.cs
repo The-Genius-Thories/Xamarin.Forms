@@ -92,7 +92,7 @@ namespace Xamarin.Forms.Platform.Android
 
 		public override bool OnInterceptTouchEvent(MotionEvent ev)
 		{
-			if (Element.InputTransparent && Element.IsEnabled)
+			if (!Element.IsEnabled || (Element.InputTransparent && Element.IsEnabled))
 				return true;
 
 			return base.OnInterceptTouchEvent(ev);
@@ -100,6 +100,12 @@ namespace Xamarin.Forms.Platform.Android
 
 		bool IOnTouchListener.OnTouch(AView v, MotionEvent e)
 		{
+			if (!Element.IsEnabled)
+				return true;
+
+			if (Element.InputTransparent)
+				return false;
+
 			var handled = false;
 			if (_pinchGestureHandler.IsPinchSupported)
 			{
@@ -215,6 +221,7 @@ namespace Xamarin.Forms.Platform.Android
 
 			SetContentDescription();
 			SetFocusable();
+			UpdateInputTransparent();
 
 			Performance.Stop();
 		}
@@ -311,6 +318,8 @@ namespace Xamarin.Forms.Platform.Android
 				SetContentDescription();
 			else if (e.PropertyName == Accessibility.IsInAccessibleTreeProperty.PropertyName)
 				SetFocusable();
+			else if (e.PropertyName == VisualElement.InputTransparentProperty.PropertyName)
+				UpdateInputTransparent();
 		}
 
 		protected override void OnLayout(bool changed, int l, int t, int r, int b)
@@ -394,6 +403,11 @@ namespace Xamarin.Forms.Platform.Android
 				textView.Hint = _defaultHint;
 
 			return true;
+		}
+
+		void UpdateInputTransparent()
+		{
+			InputTransparent = Element.InputTransparent;
 		}
 
 		protected void SetPackager(VisualElementPackager packager)
