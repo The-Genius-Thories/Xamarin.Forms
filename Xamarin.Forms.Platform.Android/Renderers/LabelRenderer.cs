@@ -4,6 +4,7 @@ using Android.Content.Res;
 using Android.Graphics;
 using Android.Text;
 using Android.Util;
+using Android.Views;
 using Android.Widget;
 using AColor = Android.Graphics.Color;
 
@@ -11,6 +12,8 @@ namespace Xamarin.Forms.Platform.Android
 {
 	public class LabelRenderer : ViewRenderer<Label, TextView>
 	{
+		bool _isInViewCell;
+
 		ColorStateList _labelTextColorDefault;
 		int _lastConstraintHeight;
 		int _lastConstraintWidth;
@@ -96,6 +99,21 @@ namespace Xamarin.Forms.Platform.Android
 					UpdateLineBreakMode();
 				if (e.OldElement.HorizontalTextAlignment != e.NewElement.HorizontalTextAlignment || e.OldElement.VerticalTextAlignment != e.NewElement.VerticalTextAlignment)
 					UpdateGravity();
+			}
+
+			// TODO hartez 2017/03/17 16:57:19 Consolidate this "is in view cell" logic between this, Box, and Image	
+			if (e.NewElement != null)
+			{
+				var parent = e.NewElement.Parent;
+				while (parent != null)
+				{
+					if (parent is ViewCell)
+					{
+						_isInViewCell = true;
+						break;
+					}
+					parent = parent.Parent;
+				}
 			}
 		}
 
@@ -216,6 +234,27 @@ namespace Xamarin.Forms.Platform.Android
 			}
 
 			_lastSizeRequest = null;
+		}
+
+		// TODO hartez 2017/03/17 16:57:19 Consolidate this logic between this, Box, and Image; they all work the same
+		public override bool OnTouchEvent(MotionEvent e)
+		{
+			if (base.OnTouchEvent(e))
+				return true;
+
+			if (!_isInViewCell && !Element.InputTransparent)
+			{
+				if (Element.Parent is Layout)
+				{
+					var ver = this.Parent as IDispatchMotionEvents;
+					ver?.Signal();
+
+					// Fake handle this event
+					return true;
+				}
+			}
+
+			return false;
 		}
 	}
 }

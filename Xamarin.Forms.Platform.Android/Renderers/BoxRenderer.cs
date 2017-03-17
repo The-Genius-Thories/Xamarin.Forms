@@ -12,11 +12,25 @@ namespace Xamarin.Forms.Platform.Android
 			AutoPackage = false;
 		}
 
+		// TODO hartez 2017/03/17 12:57:31 Test this in 35477 - Should work in Frame now, probably didn't before (check image, too)
 		public override bool OnTouchEvent(MotionEvent e)
 		{
 			if (base.OnTouchEvent(e))
 				return true;
-			return !Element.InputTransparent && !_isInViewCell;
+			
+			if (!_isInViewCell && !Element.InputTransparent)
+			{
+				if (Element.Parent is Layout)
+				{
+					var ver = this.Parent as IDispatchMotionEvents;
+					ver?.Signal();
+
+					// Fake handle this event
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		protected override void OnElementChanged(ElementChangedEventArgs<BoxView> e)

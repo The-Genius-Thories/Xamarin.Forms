@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading.Tasks;
 using Android.Graphics;
+using Android.Views;
 using AImageView = Android.Widget.ImageView;
 
 namespace Xamarin.Forms.Platform.Android
@@ -10,6 +11,7 @@ namespace Xamarin.Forms.Platform.Android
 	public class ImageRenderer : ViewRenderer<Image, AImageView>
 	{
 		bool _isDisposed;
+		bool _isInViewCell;
 
 		IElementController ElementController => Element as IElementController;
 
@@ -41,6 +43,20 @@ namespace Xamarin.Forms.Platform.Android
 			{
 				var view = CreateNativeControl();
 				SetNativeControl(view);
+			}
+
+			if (e.NewElement != null)
+			{
+				var parent = e.NewElement.Parent;
+				while (parent != null)
+				{
+					if (parent is ViewCell)
+					{
+						_isInViewCell = true;
+						break;
+					}
+					parent = parent.Parent;
+				}
 			}
 
 			UpdateBitmap(e.OldElement);
@@ -115,6 +131,26 @@ namespace Xamarin.Forms.Platform.Android
 				((IImageController)Element).SetIsLoading(false);
 				((IVisualElementController)Element).NativeSizeChanged();
 			}
+		}
+
+		public override bool OnTouchEvent(MotionEvent e)
+		{
+			if (base.OnTouchEvent(e))
+				return true;
+
+			if (!_isInViewCell && !Element.InputTransparent)
+			{
+				if (Element.Parent is Layout)
+				{
+					var ver = this.Parent as IDispatchMotionEvents;
+					ver?.Signal();
+
+					// Fake handle this event
+					return true;
+				}
+			}
+
+			return false;
 		}
 	}
 }

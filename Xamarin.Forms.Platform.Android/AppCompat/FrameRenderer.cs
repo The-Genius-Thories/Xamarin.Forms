@@ -96,7 +96,7 @@ namespace Xamarin.Forms.Platform.Android.AppCompat
 				handled = _scaleDetector.Value.OnTouchEvent(e);
 			}
 			
-			handled = handled || _gestureDetector.Value.OnTouchEvent(e) || !Element.InputTransparent;
+			handled = handled || _gestureDetector.Value.OnTouchEvent(e);
 
 			return handled;
 		}
